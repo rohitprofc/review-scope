@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReviewScope</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen">
+    <header class="bg-white w-full p-6 shadow-md mb-8">
+        <h1 class="text-center text-2xl font-bold text-blue-700">ReviewScope</h1>
+    </header>
+
+    <main class="w-full max-w-4xl mx-auto p-4">
+        <!-- Sentiment Analysis Section -->
+        <section class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-lg font-semibold mb-4">Analyze Sentiment</h2>
+            <form id="sentiment-form" class="flex flex-col gap-4">
+                <textarea id="review-input" placeholder="Enter review text" required
+                    class="border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500"></textarea>
+                <button type="button" onclick="analyzeSentiment()"
+                    class="bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Analyze</button>
+            </form>
+            <p id="sentiment-result" class="text-blue-700 font-semibold mt-4"></p>
+        </section>
+
+        <!-- Review Retrieval Section -->
+        <section class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-lg font-semibold mb-4">Retrieve Reviews</h2>
+            <form id="review-retrieval-form" class="flex flex-col gap-4">
+                <input type="text" id="color-input" placeholder="Color (e.g., Black)"
+                    class="border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500">
+                <input type="text" id="storage-input" placeholder="Storage (e.g., 128GB)"
+                    class="border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500">
+                <input type="number" id="rating-input" placeholder="Rating (1-5)" min="1" max="5"
+                    class="border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500">
+                <button type="button" onclick="retrieveReviews()"
+                    class="bg-green-500 text-white py-2 rounded hover:bg-green-600">Retrieve</button>
+            </form>
+            <div id="reviews-result" class="mt-4 space-y-4"></div>
+        </section>
+    </main>
+
+    <script>
+        // Analyze Sentiment Function
+        function analyzeSentiment() {
+            const reviewText = document.getElementById('review-input').value;
+            fetch('/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ review: reviewText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('sentiment-result').innerText = 'Sentiment Score: ' + data.sentiment.toFixed(2);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Retrieve Reviews Function
+        function retrieveReviews() {
+            const color = document.getElementById('color-input').value;
+            const storage = document.getElementById('storage-input').value;
+            const rating = document.getElementById('rating-input').value;
+            fetch(`/reviews?color=${color}&storage=${storage}&rating=${rating}`)
+                .then(response => response.json())
+                .then(data => {
+                    const reviewsDiv = document.getElementById('reviews-result');
+                    reviewsDiv.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(review => {
+                            const reviewElement = document.createElement('div');
+                            reviewElement.classList.add("bg-gray-50", "p-4", "rounded", "shadow-sm");
+                            reviewElement.innerHTML = `
+                                <h3 class="font-semibold text-gray-800">${review.title}</h3>
+                                <p><strong>Review:</strong> ${review.review_text}</p>
+                                <p><strong>Style:</strong> ${review.style_name}</p>
+                                <p><strong>Color:</strong> ${review.color}</p>
+                                <p><strong>Verified Purchase:</strong> ${review.verified_purchase}</p>
+                                <p><strong>Sentiment:</strong> ${review.sentiment}</p>
+                                <p><strong>Rating:</strong> ${review.rating}</p>
+                            `;
+                            reviewsDiv.appendChild(reviewElement);
+                        });
+                    } else {
+                        reviewsDiv.innerText = 'No reviews found for the specified criteria.';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
